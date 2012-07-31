@@ -23,7 +23,7 @@ class Rule {
     }
   }
 
-  cellIs() {
+  State cellIs() {
     return cellState;
   }
 
@@ -35,11 +35,11 @@ class Grid {
     field = new Map();
   }
 
-  set(int x, int y, State state){
+  set(x, y, state){
     field[pos(x,y)] = state;
   }
 
-  get(int x, int y){
+  State get(x, y){
     var state = field[pos(x,y)];
     return state != null ? state : State.DEAD;
   }
@@ -49,10 +49,10 @@ class Grid {
   static final UP = -1;
   static final DOWN = 1;
   
-  countLiveNeighbours(int x, int y) {
-    return get(x+LEFT, y+UP).value + get(x, y+UP).value + get(x+RIGHT, y+UP).value+ 
-        get(x+LEFT, y).value + get(x+RIGHT, y).value+
-        get(x+LEFT, y+DOWN).value + get(x, y+DOWN).value + get(x+RIGHT, y+DOWN).value;
+  int countLiveNeighbours(x, y) {
+    return get(x+LEFT, y+UP).value +   get(x, y+UP).value +   get(x+RIGHT, y+UP).value + 
+           get(x+LEFT, y).value +                             get(x+RIGHT, y).value +
+           get(x+LEFT, y+DOWN).value + get(x, y+DOWN).value + get(x+RIGHT, y+DOWN).value;
   }
 
   pos(x, y) {
@@ -69,12 +69,14 @@ class Grid {
     return sb.toString();
   }
   
-  iterate(innerBody, outerBody) {
+  iterate(innerBody, [outerBody=null]) {
     for (var x=0; x<xCount; x++) {
       for (var y=0; y<yCount; y++) {
          innerBody(x,y);
       }
-      outerBody(x);
+      if(outerBody != null){
+        outerBody(x);
+      }
     }
     
   }
@@ -93,7 +95,7 @@ class Game {
       var rule = new Rule(grid.get(x, y)); 
       rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
       newGrid.set(x, y, rule.cellIs());
-    }, (x){});
+    });
     
     this.grid = newGrid;
   }
