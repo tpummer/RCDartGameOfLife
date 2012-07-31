@@ -61,11 +61,8 @@ class Grid {
 
   print() {
     var sb = new StringBuffer();
-    iterate((x,y){
-      sb.add(get(x,y).symbol);
-    }, (x){
-      sb.add("\n");
-    });
+    iterate((x,y) { sb.add(get(x,y).symbol); }, 
+            (x) { sb.add("\n"); });
     return sb.toString();
   }
   
@@ -74,11 +71,10 @@ class Grid {
       for (var y=0; y<yCount; y++) {
          innerBody(x,y);
       }
-      if(outerBody != null){
+      if(outerBody != null) {
         outerBody(x);
       }
     }
-    
   }
 
   final xCount, yCount;
@@ -91,7 +87,7 @@ class Game {
   tick() {
     var newGrid = new Grid(this.grid.xCount, this.grid.yCount);
 
-    grid.iterate((x,y){
+    grid.iterate((x,y) {
       var rule = new Rule(grid.get(x, y)); 
       rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
       newGrid.set(x, y, rule.cellIs());
