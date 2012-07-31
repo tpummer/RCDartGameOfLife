@@ -3,12 +3,13 @@
 // see http://rosettacode.org/wiki/Conway%27s_Game_of_Life
 
 class State {
-  const State(this.symbol);
+  const State(this.symbol, this.value);
 
-  static final ALIVE = const State('#');
-  static final DEAD = const State(' ');
+  static final ALIVE = const State('#', 1);
+  static final DEAD = const State(' ', 0);
 
   final String symbol;
+  final int value;
 }
 
 class Rule {
@@ -43,23 +44,61 @@ class Grid {
     return state != null ? state : State.DEAD;
   }
 
-  pos(x,y) {
+  static final LEFT = -1;
+  static final RIGHT = 1;
+  static final UP = -1;
+  static final DOWN = 1;
+  
+  countLiveNeighbours(int x, int y) {
+    return get(x+LEFT, y+UP).value + get(x, y+UP).value + get(x+RIGHT, y+UP).value+ 
+        get(x+LEFT, y).value + get(x+RIGHT, y).value+
+        get(x+LEFT, y+DOWN).value + get(x, y+DOWN).value + get(x+RIGHT, y+DOWN).value;
+  }
+
+  pos(x, y) {
     return '${(x+xCount)%xCount}:${(y+yCount)%yCount}';
   }
 
   print() {
     var sb = new StringBuffer();
+    iterate((x,y){
+      sb.add(get(x,y).symbol);
+    }, (x){
+      sb.add("\n");
+    });
+    return sb.toString();
+  }
+  
+  iterate(innerBody, outerBody) {
     for (var x=0; x<xCount; x++) {
       for (var y=0; y<yCount; y++) {
-        sb.add(get(x,y).symbol);
+         innerBody(x,y);
       }
-      sb.add("\n");
+      outerBody(x);
     }
-    return sb.toString();
+    
   }
 
   final xCount, yCount;
   var field;
+}
+
+class Game {
+  Game(Grid this.grid);
+  
+  tick() {
+    var newGrid = new Grid(this.grid.xCount, this.grid.yCount);
+
+    grid.iterate((x,y){
+      var rule = new Rule(grid.get(x, y)); 
+      rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
+      newGrid.set(x, y, rule.cellIs());
+    }, (x){});
+    
+    this.grid = newGrid;
+  }
+  
+  var grid;
 }
 
 main() {
@@ -90,23 +129,23 @@ main() {
     test('should have state', () {
       var grid = new Grid(1,1);
       expect(grid.get(0,0), State.DEAD);
-      grid.set(0,0,State.ALIVE);
+      grid.set(0,0, State.ALIVE);
       expect(grid.get(0,0), State.ALIVE);
     });
     test('should have dimension', () {
       var grid = new Grid(2,3);
       expect(grid.get(0,0), State.DEAD);
-      grid.set(0,0,State.ALIVE);
+      grid.set(0,0, State.ALIVE);
       expect(grid.get(0,0), State.ALIVE);
       expect(grid.get(1,2), State.DEAD);
-      grid.set(1,2,State.ALIVE);
+      grid.set(1,2, State.ALIVE);
       expect(grid.get(1,2), State.ALIVE);
     });
     test('should be endless', () {
       var grid = new Grid(2,4);
-      grid.set(2,4,State.ALIVE);
+      grid.set(2,4, State.ALIVE);
       expect(grid.get(0,0), State.ALIVE);
-      grid.set(-1,-1,State.ALIVE);
+      grid.set(-1,-1, State.ALIVE);
       expect(grid.get(1,3), State.ALIVE);
     });
     test('should print itself', () {
@@ -117,9 +156,65 @@ main() {
   });
 
   group('game', () {
-    //TODO should count neigbours
-    //TODO should update grid in a step
+    test('should exists', () {
+     var game = new Game(null);
+     expect(game, isNotNull);
+    });
+    test('should create a new grid when ticked', () {
+      var grid = new Grid(1,1);
+      var game = new Game(grid);
+      game.tick();
+      expect(game.grid !== grid);
+    });
+    test('should have a grid with the same dimension after tick', (){
+      var grid = new Grid(2,3);
+      var game = new Game(grid);
+      game.tick();
+      expect(game.grid.xCount, 2);
+      expect(game.grid.yCount, 3);
+    });
+    test('should apply rules to middle cell', (){
+      var grid = new Grid(3,3);
+      grid.set(1, 1, State.ALIVE);
+      var game = new Game(grid);
+      game.tick();
+      expect(game.grid.get(1, 1), State.DEAD);
+      
+      grid.set(0, 0, State.ALIVE);
+      grid.set(1, 0, State.ALIVE);
+      game = new Game(grid);
+      game.tick();
+      expect(game.grid.get(1, 1), State.ALIVE);
+    });
+    test('should apply rules to all cells', (){
+      var grid = new Grid(3,3);
+      grid.set(0, 1, State.ALIVE);
+      grid.set(1, 0, State.ALIVE);
+      grid.set(1, 1, State.ALIVE);
+      var game = new Game(grid);
+      game.tick();
+      expect(game.grid.get(0, 0), State.ALIVE);
+    });
   });
+  
+  runBlinker();
 
-  //TODO run blinker in 3x3 for 3 iterations,
+}
+
+runBlinker(){
+  var blinker = getBlinker();
+  var game = new Game(blinker);
+  for(int i = 0; i < 3; i++){
+    print(game.grid.print());
+    game.tick();
+  }
+  print(game.grid.print());
+}
+
+getBlinker(){
+  var grid = new Grid(4, 4);
+  grid.set(0, 1, State.ALIVE);
+  grid.set(1, 1, State.ALIVE);
+  grid.set(2, 1, State.ALIVE);
+  return grid;
 }
