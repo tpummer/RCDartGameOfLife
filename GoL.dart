@@ -15,7 +15,7 @@ class State {
 class Rule {
   Rule(this.cellState);
 
-  reactToNeighbours(int neighbours){
+  reactToNeighbours(int neighbours) {
     if (neighbours == 3) {
       cellState = State.ALIVE;
     } else if (neighbours != 2) {
@@ -35,12 +35,12 @@ class Grid {
     field = new Map();
   }
 
-  set(x, y, state){
-    field[pos(x,y)] = state;
+  set(x, y, state) {
+    field[pos(x, y)] = state;
   }
 
-  State get(x, y){
-    var state = field[pos(x,y)];
+  State get(x, y) {
+    var state = field[pos(x, y)];
     return state != null ? state : State.DEAD;
   }
 
@@ -56,20 +56,20 @@ class Grid {
   }
 
   pos(x, y) {
-    return '${(x+xCount)%xCount}:${(y+yCount)%yCount}';
+    return '${(x + xCount) % xCount}:${(y + yCount) % yCount}';
   }
 
   print() {
     var sb = new StringBuffer();
-    iterate((x,y) { sb.add(get(x,y).symbol); },
+    iterate((x, y) { sb.add(get(x,y).symbol); },
             (x) { sb.add("\n"); });
     return sb.toString();
   }
 
   iterate(innerBody, [outerBody=null]) {
-    for (var x=0; x<xCount; x++) {
-      for (var y=0; y<yCount; y++) {
-         innerBody(x,y);
+    for (var x = 0; x < xCount; x++) {
+      for (var y = 0; y < yCount; y++) {
+         innerBody(x, y);
       }
       if(outerBody != null) {
         outerBody(x);
@@ -87,7 +87,7 @@ class Game {
   tick() {
     var newGrid = new Grid(this.grid.xCount, this.grid.yCount);
 
-    grid.iterate((x,y) {
+    grid.iterate((x, y) {
       var rule = new Rule(grid.get(x, y));
       rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
       newGrid.set(x, y, rule.cellIs());
@@ -125,30 +125,30 @@ main() {
 
   group('grid', () {
     test('should have state', () {
-      var grid = new Grid(1,1);
-      expect(grid.get(0,0), State.DEAD);
-      grid.set(0,0, State.ALIVE);
-      expect(grid.get(0,0), State.ALIVE);
+      var grid = new Grid(1, 1);
+      expect(grid.get(0, 0), State.DEAD);
+      grid.set(0, 0, State.ALIVE);
+      expect(grid.get(0, 0), State.ALIVE);
     });
     test('should have dimension', () {
-      var grid = new Grid(2,3);
-      expect(grid.get(0,0), State.DEAD);
-      grid.set(0,0, State.ALIVE);
-      expect(grid.get(0,0), State.ALIVE);
-      expect(grid.get(1,2), State.DEAD);
-      grid.set(1,2, State.ALIVE);
-      expect(grid.get(1,2), State.ALIVE);
+      var grid = new Grid(2, 3);
+      expect(grid.get(0, 0), State.DEAD);
+      grid.set(0, 0, State.ALIVE);
+      expect(grid.get(0, 0), State.ALIVE);
+      expect(grid.get(1, 2), State.DEAD);
+      grid.set(1, 2, State.ALIVE);
+      expect(grid.get(1, 2), State.ALIVE);
     });
     test('should be endless', () {
-      var grid = new Grid(2,4);
-      grid.set(2,4, State.ALIVE);
-      expect(grid.get(0,0), State.ALIVE);
-      grid.set(-1,-1, State.ALIVE);
-      expect(grid.get(1,3), State.ALIVE);
+      var grid = new Grid(2, 4);
+      grid.set(2, 4, State.ALIVE);
+      expect(grid.get(0, 0), State.ALIVE);
+      grid.set(-1, -1, State.ALIVE);
+      expect(grid.get(1, 3), State.ALIVE);
     });
     test('should print itself', () {
-      var grid = new Grid(1,2);
-      grid.set(0,1,State.ALIVE);
+      var grid = new Grid(1, 2);
+      grid.set(0, 1,State.ALIVE);
       expect(grid.print(), " #\n");
     });
   });
@@ -159,20 +159,20 @@ main() {
      expect(game, isNotNull);
     });
     test('should create a new grid when ticked', () {
-      var grid = new Grid(1,1);
+      var grid = new Grid(1, 1);
       var game = new Game(grid);
       game.tick();
       expect(game.grid !== grid);
     });
     test('should have a grid with the same dimension after tick', (){
-      var grid = new Grid(2,3);
+      var grid = new Grid(2, 3);
       var game = new Game(grid);
       game.tick();
       expect(game.grid.xCount, 2);
       expect(game.grid.yCount, 3);
     });
     test('should apply rules to middle cell', (){
-      var grid = new Grid(3,3);
+      var grid = new Grid(3, 3);
       grid.set(1, 1, State.ALIVE);
       var game = new Game(grid);
       game.tick();
@@ -185,7 +185,7 @@ main() {
       expect(game.grid.get(1, 1), State.ALIVE);
     });
     test('should apply rules to all cells', (){
-      var grid = new Grid(3,3);
+      var grid = new Grid(3, 3);
       grid.set(0, 1, State.ALIVE);
       grid.set(1, 0, State.ALIVE);
       grid.set(1, 1, State.ALIVE);
