@@ -2,16 +2,23 @@
 
 // see http://rosettacode.org/wiki/Conway%27s_Game_of_Life
 
+/**
+ * States of a cell. A cell is either [ALIVE] or [DEAD].
+ * The state contains its [symbol] for printing.
+ */
 class State {
-  const State(this.symbol, this.value);
+  const State(this.symbol);
 
-  static final ALIVE = const State('#', 1);
-  static final DEAD = const State(' ', 0);
+  static final ALIVE = const State('#');
+  static final DEAD = const State(' ');
 
   final String symbol;
-  final int value;
 }
 
+/**
+ * The "business rule" of the game. Depending on the count of neighbours,
+ * the [cellState] changes.
+ */
 class Rule {
   Rule(this.cellState);
 
@@ -23,16 +30,36 @@ class Rule {
     }
   }
 
-  State cellIs() {
-    return cellState;
-  }
-
   var cellState;
 }
 
+/**
+ * List of the relative indices of the 8 cells around a cell.
+ */
+class Neighbourhood {
+  factory Neighbourhood() {
+    return [
+      [LEFT, UP],   [MIDDLE, UP],   [RIGHT, UP],
+      [LEFT, SAME],                 [RIGHT, SAME],
+      [LEFT, DOWN], [MIDDLE, DOWN], [RIGHT, DOWN]
+    ];
+  }
+
+  static final LEFT = -1;
+  static final MIDDLE = 0;
+  static final RIGHT = 1;
+  static final UP = -1;
+  static final SAME = 0;
+  static final DOWN = 1;
+}
+
+/**
+ * The grid is an endless, two-dimensional [field] of cell [State]s.
+ */
 class Grid {
   Grid(this.xCount, this.yCount) {
     field = new Map();
+    neighbours = new Neighbourhood();
   }
 
   set(x, y, state) {
@@ -44,59 +71,55 @@ class Grid {
     return state != null ? state : State.DEAD;
   }
 
-  static final LEFT = -1;
-  static final RIGHT = 1;
-  static final UP = -1;
-  static final DOWN = 1;
+  int countLiveNeighbours(x, y) =>
+    neighbours.filter((i) => get(x + i[0], y + i[1]) == State.ALIVE).length;
 
-  int countLiveNeighbours(x, y) {
-    return get(x+LEFT, y+UP).value +   get(x, y+UP).value +   get(x+RIGHT, y+UP).value +
-           get(x+LEFT, y).value +                             get(x+RIGHT, y).value +
-           get(x+LEFT, y+DOWN).value + get(x, y+DOWN).value + get(x+RIGHT, y+DOWN).value;
-  }
-
-  pos(x, y) {
-    return '${(x + xCount) % xCount}:${(y + yCount) % yCount}';
-  }
+  pos(x, y) => '${(x + xCount) % xCount}:${(y + yCount) % yCount}';
 
   print() {
     var sb = new StringBuffer();
-    iterate((x, y) { sb.add(get(x,y).symbol); },
+    iterate((x, y) { sb.add(get(x, y).symbol); },
             (x) { sb.add("\n"); });
     return sb.toString();
   }
 
-  iterate(innerBody, [outerBody=null]) {
+  iterate(eachCell, [finishedRow]) {
     for (var x = 0; x < xCount; x++) {
       for (var y = 0; y < yCount; y++) {
-         innerBody(x, y);
+         eachCell(x, y);
       }
-      if(outerBody != null) {
-        outerBody(x);
+      if(finishedRow != null) {
+        finishedRow(x);
       }
     }
   }
 
   final xCount, yCount;
-  var field;
+  List<List<int>> neighbours;
+  Map<String, State> field;
 }
 
+/**
+ * The game updates the [grid] in each step using the [Rule].
+ */
 class Game {
-  Game(Grid this.grid);
+  Game(this.grid);
 
   tick() {
-    var newGrid = new Grid(this.grid.xCount, this.grid.yCount);
+    var newGrid = createNewGrid();
 
     grid.iterate((x, y) {
       var rule = new Rule(grid.get(x, y));
       rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
-      newGrid.set(x, y, rule.cellIs());
+      newGrid.set(x, y, rule.cellState);
     });
 
     this.grid = newGrid;
   }
 
-  var grid;
+  createNewGrid() => new Grid(this.grid.xCount, this.grid.yCount);
+
+  Grid grid;
 }
 
 main() {
@@ -104,22 +127,22 @@ main() {
     test('should let living but lonely cell die', () {
       var rule = new Rule(State.ALIVE);
       rule.reactToNeighbours(1);
-      expect(rule.cellIs(), State.DEAD);
+      expect(rule.cellState, State.DEAD);
     });
     test('should let proper cell live on', () {
       var rule = new Rule(State.ALIVE);
       rule.reactToNeighbours(2);
-      expect(rule.cellIs(), State.ALIVE);
+      expect(rule.cellState, State.ALIVE);
     });
     test('should let dead cell with three neighbours be reborn', () {
       var rule = new Rule(State.DEAD);
       rule.reactToNeighbours(3);
-      expect(rule.cellIs(), State.ALIVE);
+      expect(rule.cellState, State.ALIVE);
     });
     test('should let living cell with too many neighbours die', () {
       var rule = new Rule(State.ALIVE);
       rule.reactToNeighbours(4);
-      expect(rule.cellIs(), State.DEAD);
+      expect(rule.cellState, State.DEAD);
     });
   });
 
