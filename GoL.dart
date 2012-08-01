@@ -49,7 +49,7 @@ class Point {
  * List of the relative indices of the 8 cells around a cell.
  */
 class Neighbourhood {
-  factory Neighbourhood() {
+  List<Point> points() {
     return [
       new Point(LEFT, UP),   new Point(MIDDLE, UP),   new Point(RIGHT, UP),
       new Point(LEFT, SAME),                          new Point(RIGHT, SAME),
@@ -71,22 +71,22 @@ class Neighbourhood {
 class Grid {
   Grid(this.xCount, this.yCount) {
     _field = new Map();
-    _neighbours = new Neighbourhood();
+    _neighbours = new Neighbourhood().points();
   }
 
   set(point, state) {
-    _field[pos(point)] = state;
+    _field[_pos(point)] = state;
   }
 
   State get(point) {
-    var state = _field[pos(point)];
+    var state = _field[_pos(point)];
     return state != null ? state : State.DEAD;
   }
 
   int countLiveNeighbours(point) =>
     _neighbours.filter((offset) => get(point + offset) == State.ALIVE).length;
 
-  pos(point) => '${(point.x + xCount) % xCount}:${(point.y + yCount) % yCount}';
+  _pos(point) => '${(point.x + xCount) % xCount}:${(point.y + yCount) % yCount}';
 
   print() {
     var sb = new StringBuffer();
@@ -136,6 +136,9 @@ class Game {
 }
 
 main() {
+
+  // Test cases driving the design of this kata.
+
   group('rules', () {
     test('should let living but lonely cell die', () {
       var rule = new Rule(State.ALIVE);
@@ -231,8 +234,8 @@ main() {
     });
   });
 
+  // Run the GoL with a blinker.
   runBlinker();
-
 }
 
 runBlinker() {
