@@ -70,21 +70,21 @@ class Neighbourhood {
  */
 class Grid {
   Grid(this.xCount, this.yCount) {
-    field = new Map();
-    neighbours = new Neighbourhood();
+    _field = new Map();
+    _neighbours = new Neighbourhood();
   }
 
   set(point, state) {
-    field[pos(point)] = state;
+    _field[pos(point)] = state;
   }
 
   State get(point) {
-    var state = field[pos(point)];
+    var state = _field[pos(point)];
     return state != null ? state : State.DEAD;
   }
 
   int countLiveNeighbours(point) =>
-    neighbours.filter((offset) => get(point + offset) == State.ALIVE).length;
+    _neighbours.filter((offset) => get(point + offset) == State.ALIVE).length;
 
   pos(point) => '${(point.x + xCount) % xCount}:${(point.y + yCount) % yCount}';
 
@@ -106,8 +106,8 @@ class Grid {
   }
 
   final xCount, yCount;
-  List<Point> neighbours;
-  Map<String, State> field;
+  List<Point> _neighbours;
+  Map<String, State> _field;
 }
 
 /**
@@ -129,6 +129,8 @@ class Game {
   }
 
   createNewGrid() => new Grid(grid.xCount, grid.yCount);
+
+  printGrid() => print(grid.print());
 
   Grid grid;
 }
@@ -233,20 +235,22 @@ main() {
 
 }
 
-runBlinker(){
-  var blinker = getBlinker();
-  var game = new Game(blinker);
-  for(int i = 0; i < 3; i++){
-    print(game.grid.print());
+runBlinker() {
+  var game = new Game(createBlinkerGrid());
+
+  for(int i = 0; i < 3; i++) {
+    game.printGrid();
     game.tick();
   }
-  print(game.grid.print());
+  game.printGrid();
 }
 
-getBlinker(){
+createBlinkerGrid() {
   var grid = new Grid(4, 4);
-  grid.set(new Point(0, 1), State.ALIVE);
-  grid.set(new Point(1, 1), State.ALIVE);
-  grid.set(new Point(2, 1), State.ALIVE);
+  loadBlinker(grid);
   return grid;
 }
+
+loadBlinker(grid) => blinkerPoints().forEach((point) =>  grid.set(point, State.ALIVE));
+
+blinkerPoints() => [new Point(0, 1), new Point(1, 1), new Point(2, 1)];
