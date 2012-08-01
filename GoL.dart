@@ -1,4 +1,4 @@
-#import('../../../../../privat/dart/dart-sdk/lib/unittest/unittest.dart');
+#import('../Compiler/dart-sdk/lib/unittest/unittest.dart');
 
 // see http://rosettacode.org/wiki/Conway%27s_Game_of_Life
 
@@ -48,9 +48,9 @@ class Grid {
   static final RIGHT = 1;
   static final UP = -1;
   static final DOWN = 1;
-  
+
   int countLiveNeighbours(x, y) {
-    return get(x+LEFT, y+UP).value +   get(x, y+UP).value +   get(x+RIGHT, y+UP).value + 
+    return get(x+LEFT, y+UP).value +   get(x, y+UP).value +   get(x+RIGHT, y+UP).value +
            get(x+LEFT, y).value +                             get(x+RIGHT, y).value +
            get(x+LEFT, y+DOWN).value + get(x, y+DOWN).value + get(x+RIGHT, y+DOWN).value;
   }
@@ -61,11 +61,11 @@ class Grid {
 
   print() {
     var sb = new StringBuffer();
-    iterate((x,y) { sb.add(get(x,y).symbol); }, 
+    iterate((x,y) { sb.add(get(x,y).symbol); },
             (x) { sb.add("\n"); });
     return sb.toString();
   }
-  
+
   iterate(innerBody, [outerBody=null]) {
     for (var x=0; x<xCount; x++) {
       for (var y=0; y<yCount; y++) {
@@ -83,19 +83,19 @@ class Grid {
 
 class Game {
   Game(Grid this.grid);
-  
+
   tick() {
     var newGrid = new Grid(this.grid.xCount, this.grid.yCount);
 
     grid.iterate((x,y) {
-      var rule = new Rule(grid.get(x, y)); 
+      var rule = new Rule(grid.get(x, y));
       rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
       newGrid.set(x, y, rule.cellIs());
     });
-    
+
     this.grid = newGrid;
   }
-  
+
   var grid;
 }
 
@@ -177,7 +177,7 @@ main() {
       var game = new Game(grid);
       game.tick();
       expect(game.grid.get(1, 1), State.DEAD);
-      
+
       grid.set(0, 0, State.ALIVE);
       grid.set(1, 0, State.ALIVE);
       game = new Game(grid);
@@ -194,7 +194,7 @@ main() {
       expect(game.grid.get(0, 0), State.ALIVE);
     });
   });
-  
+
   runBlinker();
 
 }
