@@ -34,14 +34,26 @@ class Rule {
 }
 
 /**
+ * A coordinate on the [Grid].
+ */
+class Point {
+  const Point(this.x, this.y);
+
+  operator +(other) => new Point(x + other.x, y + other.y);
+
+  final int x;
+  final int y;
+}
+
+/**
  * List of the relative indices of the 8 cells around a cell.
  */
 class Neighbourhood {
   factory Neighbourhood() {
     return [
-      [LEFT, UP],   [MIDDLE, UP],   [RIGHT, UP],
-      [LEFT, SAME],                 [RIGHT, SAME],
-      [LEFT, DOWN], [MIDDLE, DOWN], [RIGHT, DOWN]
+      new Point(LEFT, UP),   new Point(MIDDLE, UP),   new Point(RIGHT, UP),
+      new Point(LEFT, SAME),                          new Point(RIGHT, SAME),
+      new Point(LEFT, DOWN), new Point(MIDDLE, DOWN), new Point(RIGHT, DOWN)
     ];
   }
 
@@ -62,31 +74,30 @@ class Grid {
     neighbours = new Neighbourhood();
   }
 
-  set(x, y, state) {
-    field[pos(x, y)] = state;
+  set(point, state) {
+    field[pos(point)] = state;
   }
 
-  State get(x, y) {
-    var state = field[pos(x, y)];
+  State get(point) {
+    var state = field[pos(point)];
     return state != null ? state : State.DEAD;
   }
 
-  int countLiveNeighbours(x, y) =>
-    neighbours.filter((i) => get(x + i[0], y + i[1]) == State.ALIVE).length;
+  int countLiveNeighbours(point) =>
+    neighbours.filter((offset) => get(point + offset) == State.ALIVE).length;
 
-  pos(x, y) => '${(x + xCount) % xCount}:${(y + yCount) % yCount}';
+  pos(point) => '${(point.x + xCount) % xCount}:${(point.y + yCount) % yCount}';
 
   print() {
     var sb = new StringBuffer();
-    iterate((x, y) { sb.add(get(x, y).symbol); },
-            (x) { sb.add("\n"); });
+    iterate((point) { sb.add(get(point).symbol); }, (x) { sb.add("\n"); });
     return sb.toString();
   }
 
   iterate(eachCell, [finishedRow]) {
     for (var x = 0; x < xCount; x++) {
       for (var y = 0; y < yCount; y++) {
-         eachCell(x, y);
+         eachCell(new Point(x, y));
       }
       if(finishedRow != null) {
         finishedRow(x);
@@ -95,7 +106,7 @@ class Grid {
   }
 
   final xCount, yCount;
-  List<List<int>> neighbours;
+  List<Point> neighbours;
   Map<String, State> field;
 }
 
@@ -108,16 +119,16 @@ class Game {
   tick() {
     var newGrid = createNewGrid();
 
-    grid.iterate((x, y) {
-      var rule = new Rule(grid.get(x, y));
-      rule.reactToNeighbours(grid.countLiveNeighbours(x, y));
-      newGrid.set(x, y, rule.cellState);
+    grid.iterate((point) {
+      var rule = new Rule(grid.get(point));
+      rule.reactToNeighbours(grid.countLiveNeighbours(point));
+      newGrid.set(point, rule.cellState);
     });
 
-    this.grid = newGrid;
+    grid = newGrid;
   }
 
-  createNewGrid() => new Grid(this.grid.xCount, this.grid.yCount);
+  createNewGrid() => new Grid(grid.xCount, grid.yCount);
 
   Grid grid;
 }
@@ -147,31 +158,32 @@ main() {
   });
 
   group('grid', () {
+    var origin = new Point(0, 0);
     test('should have state', () {
       var grid = new Grid(1, 1);
-      expect(grid.get(0, 0), State.DEAD);
-      grid.set(0, 0, State.ALIVE);
-      expect(grid.get(0, 0), State.ALIVE);
+      expect(grid.get(origin), State.DEAD);
+      grid.set(origin, State.ALIVE);
+      expect(grid.get(origin), State.ALIVE);
     });
     test('should have dimension', () {
       var grid = new Grid(2, 3);
-      expect(grid.get(0, 0), State.DEAD);
-      grid.set(0, 0, State.ALIVE);
-      expect(grid.get(0, 0), State.ALIVE);
-      expect(grid.get(1, 2), State.DEAD);
-      grid.set(1, 2, State.ALIVE);
-      expect(grid.get(1, 2), State.ALIVE);
+      expect(grid.get(origin), State.DEAD);
+      grid.set(origin, State.ALIVE);
+      expect(grid.get(origin), State.ALIVE);
+      expect(grid.get(new Point(1, 2)), State.DEAD);
+      grid.set(new Point(1, 2), State.ALIVE);
+      expect(grid.get(new Point(1, 2)), State.ALIVE);
     });
     test('should be endless', () {
       var grid = new Grid(2, 4);
-      grid.set(2, 4, State.ALIVE);
-      expect(grid.get(0, 0), State.ALIVE);
-      grid.set(-1, -1, State.ALIVE);
-      expect(grid.get(1, 3), State.ALIVE);
+      grid.set(new Point(2, 4), State.ALIVE);
+      expect(grid.get(origin), State.ALIVE);
+      grid.set(new Point(-1, -1), State.ALIVE);
+      expect(grid.get(new Point(1, 3)), State.ALIVE);
     });
     test('should print itself', () {
       var grid = new Grid(1, 2);
-      grid.set(0, 1,State.ALIVE);
+      grid.set(new Point(0, 1), State.ALIVE);
       expect(grid.print(), " #\n");
     });
   });
@@ -188,33 +200,32 @@ main() {
       expect(game.grid !== grid);
     });
     test('should have a grid with the same dimension after tick', (){
-      var grid = new Grid(2, 3);
-      var game = new Game(grid);
+      var game = new Game(new Grid(2, 3));
       game.tick();
       expect(game.grid.xCount, 2);
       expect(game.grid.yCount, 3);
     });
     test('should apply rules to middle cell', (){
       var grid = new Grid(3, 3);
-      grid.set(1, 1, State.ALIVE);
+      grid.set(new Point(1, 1), State.ALIVE);
       var game = new Game(grid);
       game.tick();
-      expect(game.grid.get(1, 1), State.DEAD);
+      expect(game.grid.get(new Point(1, 1)), State.DEAD);
 
-      grid.set(0, 0, State.ALIVE);
-      grid.set(1, 0, State.ALIVE);
+      grid.set(new Point(0, 0), State.ALIVE);
+      grid.set(new Point(1, 0), State.ALIVE);
       game = new Game(grid);
       game.tick();
-      expect(game.grid.get(1, 1), State.ALIVE);
+      expect(game.grid.get(new Point(1, 1)), State.ALIVE);
     });
     test('should apply rules to all cells', (){
       var grid = new Grid(3, 3);
-      grid.set(0, 1, State.ALIVE);
-      grid.set(1, 0, State.ALIVE);
-      grid.set(1, 1, State.ALIVE);
+      grid.set(new Point(0, 1), State.ALIVE);
+      grid.set(new Point(1, 0), State.ALIVE);
+      grid.set(new Point(1, 1), State.ALIVE);
       var game = new Game(grid);
       game.tick();
-      expect(game.grid.get(0, 0), State.ALIVE);
+      expect(game.grid.get(new Point(0, 0)), State.ALIVE);
     });
   });
 
@@ -234,8 +245,8 @@ runBlinker(){
 
 getBlinker(){
   var grid = new Grid(4, 4);
-  grid.set(0, 1, State.ALIVE);
-  grid.set(1, 1, State.ALIVE);
-  grid.set(2, 1, State.ALIVE);
+  grid.set(new Point(0, 1), State.ALIVE);
+  grid.set(new Point(1, 1), State.ALIVE);
+  grid.set(new Point(2, 1), State.ALIVE);
   return grid;
 }
